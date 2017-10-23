@@ -51,7 +51,10 @@ func (tv *testValue) hello(a ASTNode) {
 }
 
 func TestParseAST(t *testing.T) {
-	a, err := ParseAST(strings.NewReader(`hello world {
+	a, err := ParseAST(strings.NewReader(`
+	//Comment
+	hello world {
+		/* this is a comment */
 		hello [(dank memes), pepe];
 	};`), "testing.conf")
 	if err != nil {
@@ -63,5 +66,7 @@ func TestParseAST(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	t.Log(string(dat))
+	if string(dat) != `{"Arr":[{"Arr":[{"Arr":["world",{"Arr":[{"Arr":[{"Arr":["dank","memes"]},"pepe"]}]}]}]}]}` {
+		t.Fatalf("Incorrect parse %s", string(dat))
+	}
 }

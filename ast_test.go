@@ -31,7 +31,15 @@ func init() {
 		for _, n := range ans {
 			tv.hello(n)
 		}
-	}})
+	}},
+		Directive{"int", func(object interface{}, ans ...ASTNode) {
+			tv := object.(*testValue)
+			tv.Arr = append(tv.Arr, ans[0].Int())
+		}},
+		Directive{"float", func(object interface{}, ans ...ASTNode) {
+			tv := object.(*testValue)
+			tv.Arr = append(tv.Arr, ans[0].Float())
+		}})
 }
 
 func (tv *testValue) hello(a ASTNode) {
@@ -51,22 +59,26 @@ func (tv *testValue) hello(a ASTNode) {
 }
 
 func TestParseAST(t *testing.T) {
-	a, err := ParseAST(strings.NewReader(`
+	tv, err := Parse(strings.NewReader(`
 	//Comment
 	hello world {
 		/* this is a comment */
 		hello [(dank memes), pepe];
-	};`), "testing.conf")
+		int 65;
+		float 52.4;
+	};`), "testing.conf", testDirp, &testValue{[]interface{}{}})
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	tv := &testValue{[]interface{}{}}
-	tv.hello(*a)
-	dat, err := json.Marshal(tv)
+	dat, err := json.Marshal(tv.(*testValue))
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	if string(dat) != `{"Arr":[{"Arr":[{"Arr":["world",{"Arr":[{"Arr":[{"Arr":["dank","memes"]},"pepe"]}]}]}]}]}` {
+	if string(dat) != `{"Arr":[{"Arr":["world",{"Arr":[{"Arr":[{"Arr":["dank","memes"]},"pepe"]},65,52.4]}]}]}` {
 		t.Fatalf("Incorrect parse %s", string(dat))
+	}
+	_, err = Parse(strings.NewReader("4"), "65.conf", DirectiveProcessor{}, nil)
+	if err.Error() != "65.conf:1:2: Directives must only contain lowercase letters" {
+		t.Fatalf("Incorrect error %s", err.Error())
 	}
 }
